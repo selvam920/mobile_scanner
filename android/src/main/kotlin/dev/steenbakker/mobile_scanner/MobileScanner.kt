@@ -365,31 +365,21 @@ class MobileScanner(
         this.returnImage = returnImage
         this.invertImage = invertImage
 
-        isPaused = false
-        
-        if (camera?.cameraInfo != null && preview != null && surfaceProducer != null && !isPaused) {
+        if (isPaused && camera?.cameraInfo != null && preview != null && surfaceProducer != null) {
+            resumeCamera(
+                cameraPosition,
+                torch,
+                torchStateCallback,
+                zoomScaleStateCallback,
+                mobileScannerStartedCallback,
+                mobileScannerErrorCallback,
+                initialZoom,
+            )
+            return
+        }
 
-// TODO: resume here for seamless transition
-//            if (isPaused) {
-//                resumeCamera()
-//                val cameraDirection = getCameraLensFacing(camera)
-//                mobileScannerStartedCallback(
-//                  MobileScannerStartParameters(
-//                    if (portrait) width else height,
-//                    if (portrait) height else width,
-//                    deviceOrientationListener.getOrientation().serialize(),
-//                    sensorRotationDegrees,
-//                    surfaceProducer!!.handlesCropAndRotation(),
-//                    currentTorchState,
-//                    surfaceProducer!!.id(),
-//                    numberOfCameras ?: 0,
-//                    cameraDirection
-//                  )
-//                )
-//                return
-//            }
+        if (camera?.cameraInfo != null && preview != null && surfaceProducer != null) {
             mobileScannerErrorCallback(AlreadyStarted())
-
             return
         }
 
@@ -561,14 +551,91 @@ class MobileScanner(
         isPaused = true
     }
 
-//    private fun resumeCamera() {
-//        // Resume camera by rebinding use cases
-//        cameraProvider?.let { provider ->
-//            val owner = activity as LifecycleOwner
-//            cameraSelector?.let { provider.bindToLifecycle(owner, it, preview) }
-//        }
-//        isPaused = false
-//    }
+    @ExperimentalLensFacing
+    private fun resumeCamera(
+        cameraPosition: CameraSelector,
+        torch: Boolean,
+        torchStateCallback: TorchStateCallback,
+        zoomScaleStateCallback: ZoomScaleStateCallback,
+        mobileScannerStartedCallback: MobileScannerStartedCallback,
+        mobileScannerErrorCallback: (exception: Exception) -> Unit,
+        initialZoom: Double?,
+    ) {
+        isPaused = false
+        lastScanned = null
+
+        try {
+            camera = cameraProvider?.bindToLifecycle(
+                activity as LifecycleOwner,
+                cameraPosition,
+                preview,
+                imageAnalysis
+            )
+            cameraSelector = cameraPosition
+        } catch (_: Exception) {
+            mobileScannerErrorCallback(CameraError())
+            return
+        }
+
+        camera?.let {
+            it.cameraInfo.torchState.observe(activity as LifecycleOwner) { state ->
+                torchStateCallback(state)
+            }
+
+            it.cameraInfo.zoomState.observe(activity as LifecycleOwner) { state ->
+                zoomScaleStateCallback(state.linearZoom.toDouble())
+            }
+
+            if (it.cameraInfo.hasFlashUnit()) {
+                it.cameraControl.enableTorch(torch)
+            }
+
+            if (initialZoom != null) {
+                try {
+                    if (initialZoom in 0.0..1.0) {
+                        it.cameraControl.setLinearZoom(initialZoom.toFloat())
+                    } else {
+                        it.cameraControl.setZoomRatio(initialZoom.toFloat())
+                    }
+                } catch (e: Exception) {
+                    mobileScannerErrorCallback(ZoomNotInRange())
+                    return
+                }
+            }
+        }
+
+        val resolution = imageAnalysis?.resolutionInfo?.resolution
+        val width = resolution?.width?.toDouble() ?: 0.0
+        val height = resolution?.height?.toDouble() ?: 0.0
+        val sensorRotationDegrees = camera?.cameraInfo?.sensorRotationDegrees ?: 0
+        val portrait = sensorRotationDegrees % 180 == 0
+        val numberOfCameras = cameraProvider?.availableCameraInfos?.size
+        val cameraDirection = getCameraLensFacing(camera)
+
+        var currentTorchState: Int = -1
+        camera?.cameraInfo?.let {
+            if (!it.hasFlashUnit()) {
+                return@let
+            }
+            currentTorchState = it.torchState.value ?: -1
+        }
+
+        deviceOrientationListener.start()
+
+        mobileScannerStartedCallback(
+            MobileScannerStartParameters(
+                if (portrait) width else height,
+                if (portrait) height else width,
+                deviceOrientationListener.getOrientation().serialize(),
+                sensorRotationDegrees,
+                surfaceProducer!!.handlesCropAndRotation(),
+                currentTorchState,
+                surfaceProducer!!.id(),
+                numberOfCameras ?: 0,
+                cameraDirection,
+            )
+        )
+    }
 
     private fun releaseCamera() {
         val owner = activity as LifecycleOwner
