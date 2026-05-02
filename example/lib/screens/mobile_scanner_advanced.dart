@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -317,7 +316,10 @@ class _MobileScannerAdvancedState extends State<MobileScannerAdvanced> {
             },
             itemBuilder:
                 (context) => [
-                  if (!kIsWeb && Platform.isAndroid)
+                  if (
+                    !kIsWeb &&
+                    defaultTargetPlatform == TargetPlatform.android
+                  )
                     PopupMenuItem(
                       value: _PopupMenuItems.cameraResolution,
                       child: Text(_PopupMenuItems.cameraResolution.name),
@@ -340,13 +342,19 @@ class _MobileScannerAdvancedState extends State<MobileScannerAdvanced> {
                     child: Text(_PopupMenuItems.formats.name),
                   ),
                   const PopupMenuDivider(),
-                  if (!kIsWeb && Platform.isAndroid)
+                  if (
+                    !kIsWeb &&
+                    defaultTargetPlatform == TargetPlatform.android
+                  )
                     CheckedPopupMenuItem(
                       value: _PopupMenuItems.autoZoom,
                       checked: autoZoom,
                       child: Text(_PopupMenuItems.autoZoom.name),
                     ),
-                  if (!kIsWeb && Platform.isAndroid)
+                  if (
+                    !kIsWeb &&
+                    defaultTargetPlatform == TargetPlatform.android
+                  )
                     CheckedPopupMenuItem(
                       value: _PopupMenuItems.invertImage,
                       checked: invertImage,
