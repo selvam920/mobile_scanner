@@ -25,6 +25,7 @@ dependencies:
   plugin_platform_interface: ^2.0.2
   web: ">=0.5.1 <2.0.0"
 
+  material_ui: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
