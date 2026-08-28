@@ -1,7 +1,6 @@
 plugins {
     id 'com.android.library'
-    id 'kotlin-android'
-}
+    }
 
 group = 'dev.steenbakker.mobile_scanner'
 version = '1.0-SNAPSHOT'
@@ -18,17 +17,14 @@ android {
         namespace = 'dev.steenbakker.mobile_scanner'
     }
 
-    compileSdk = 36
+    compileSdk = 37
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
-    }
-
+    
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
         test.java.srcDirs += 'src/test/kotlin'
@@ -67,5 +63,11 @@ android {
                 showStandardStreams = true
             }
         }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
