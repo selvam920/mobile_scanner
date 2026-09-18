@@ -21,9 +21,11 @@ if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 
+
 android {
     namespace = "dev.steenbakker.mobile_scanner_example"
     compileSdk = 37
+    ndkVersion = "30.0.16248370"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_21
@@ -40,7 +42,6 @@ android {
         applicationId "dev.steenbakker.mobile_scanner_example"
         minSdkVersion = 24
         targetSdkVersion = 36
-        ndkVersion = flutter.ndkVersion
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
     }
